@@ -121,7 +121,7 @@ def generate_utility():
             values_grad.append(grad)
     
     for _ in range(num_utility_function):
-        utility_function = Utility_Function_Parameterized(reward_shape=reward_shape, lamda=0.1, max_weight=0.5, size_factor=2).cuda()
+        utility_function = Utility_Function_Parameterized(reward_shape=reward_shape, lamda=0.1, max_weight=0.5, size_factor=1).cuda()
         utility_function.min_val = min_val.copy()
         utility_function.max_val = max_val.copy()
         loss = train_utility(utility_function, values, values_near, values_grad)

@@ -19,6 +19,14 @@ import time
 from typing import Literal
 import os
 
+
+def reward_dim(env) -> int:
+    try:
+        return env.reward_dim
+    except AttributeError:
+        return reward_dim(env.unwrapped)
+
+
 ENV_ID_TO_NAME = {
     "mo-mountaincarcontinuous-v0": "MountainCar",
     "breakable-bottles-v0": "BreakableBottles",
@@ -52,7 +60,7 @@ class UtilityFunctionLoader(object):
                  ):
         utility_dir = 'experiments/' + exp_name
         os.makedirs(utility_dir, exist_ok=True)
-        reward_shape = test_env.reward_dim
+        reward_shape = reward_dim(test_env)
         if reward_two_dim:
             reward_shape = 2
         if reward_dim_indices == '':
@@ -60,7 +68,7 @@ class UtilityFunctionLoader(object):
         else:
             reward_dim_indices = eval(reward_dim_indices)
             reward_shape = len(reward_dim_indices)
-
+        self.reward_dim_indices = reward_dim_indices
         print(f'{reward_dim_indices = }, {reward_shape = }')
         DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Device {DEVICE}")
@@ -151,8 +159,11 @@ class Main(object):
                  linear_utility: bool = False,
                  max_episode_steps: int = 500,
                  augment_state: bool = False,
+                 gpu_id: str = '0',
                  seed: int = 42
                  ):
+        os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_id)
+
         utility_dir = 'experiments/' + exp_name
         with open('normalization_data/data.pickle', 'rb') as file:
             self.normalization_data = pickle.load(file)
@@ -161,13 +172,13 @@ class Main(object):
         self.env_id = env_id
         self.max_episode_steps = max_episode_steps
         self.test_env = build_test_env(env_id, max_episode_steps=max_episode_steps)
-        assert hasattr(self.test_env, 'reward_dim')
+
         self.utility_loader = UtilityFunctionLoader(
             test_env=self.test_env, reward_two_dim=reward_two_dim,
             reward_dim_indices=reward_dim_indices, exp_name=exp_name,
             lamda=lamda, keep_scale=keep_scale, linear_utility=linear_utility
         )
-        self.reward_dim_indices = reward_dim_indices
+        self.reward_dim_indices = self.utility_loader.reward_dim_indices
         self.policies = []
         self.utility_functions_optims = []
 
@@ -199,7 +210,7 @@ class Main(object):
 
     @property
     def reward_dim(self):
-        return self.test_env.reward_dim
+        return reward_dim(self.test_env)
 
     @property
     def num_utility_programmed(self):
@@ -261,9 +272,6 @@ class Main(object):
 def cli(**kwargs):
     return Main(**kwargs).run()
 
+
 if __name__ == '__main__':
     fire.Fire(cli)
-
-
-
-
