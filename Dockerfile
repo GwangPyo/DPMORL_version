@@ -18,7 +18,8 @@ RUN apt-get update && apt-get install -y \
     libxcursor1 \
     vim \
     openssh-server \
-    swig
+    swig \
+    build-essential
 
 RUN pip3 install --upgrade pip setuptools wheel
 
