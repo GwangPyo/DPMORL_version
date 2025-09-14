@@ -379,23 +379,21 @@ if __name__ == "__main__":
         normalization_data = pickle.load(file)
         
     args = config_args()
-
+    # GPU select
     choose_gpu(args)
-
+    # environment load
     base_env_name = env_functions(args.env)
-
     alg_name = "PPO"
-
     test_env = base_env_name()
 
     print(f"env: {args.env}, env reward dim: {test_env.reward_dim}")
-
     gym_id_name = get_id_name(args.env)
 
     num_cpu = args.num_envs  # Number of processes to use
     epochs = args.utility_epochs
     learning_rate = args.lr
-    
+    # load utility function
+
     utility_dir = 'experiments/' + args.exp_name
     os.makedirs(utility_dir, exist_ok=True)
     reward_shape = test_env.reward_dim
@@ -435,7 +433,7 @@ if __name__ == "__main__":
         model = Utility_Function_Parameterized(reward_shape=reward_shape, norm=norm, lamda=args.lamda, max_weight=0.5, keep_scale=args.keep_scale, size_factor=1)
         model.load_state_dict(torch.load(path))
         model.eval()
-        model = model.cuda()
+        model = model.  cuda()
         pretrained_utility_functions.append(model)
     num_utility_pretrained = len(pretrained_utility_functions)
     
