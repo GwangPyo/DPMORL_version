@@ -11,11 +11,19 @@ import math
 import sys
 from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
 
+
+def get_reward_dim(env) -> int:
+    try:
+        return env.reward_dim
+    except AttributeError:
+        return get_reward_dim(env.unwrapped)
+
+
 class ObsInfoWrapper(gym.Wrapper):
     def __init__(
             self,
-            env, 
-            reward_dim, 
+            env,
+            reward_dim,
             reward_dim_indices
     ):
         super().__init__(env)
@@ -23,19 +31,19 @@ class ObsInfoWrapper(gym.Wrapper):
         self.cur_timesteps = 0
         self.reward_dim = reward_dim
         self.reward_dim_indices = reward_dim_indices
-        self.actual_reward_dim = self.env.reward_dim
+        self.actual_reward_dim = get_reward_dim(self.env)
         self.zt = np.zeros(self.actual_reward_dim)
         if isinstance(self.action_space, gymnasium.spaces.Box):
             self.action_space = gym.spaces.Box(low=self.action_space.low, high=self.action_space.high,
-                                           shape=self.action_space.shape, dtype=self.action_space.dtype)
+                                               shape=self.action_space.shape, dtype=self.action_space.dtype)
         elif isinstance(self.action_space, gymnasium.spaces.Discrete):
             self.action_space = gym.spaces.Discrete(self.action_space.n)
         if isinstance(self.observation_space, gymnasium.spaces.Box):
             self.obs_high = np.array(self.observation_space.high, dtype=np.float32)
             self.obs_low = np.array(self.observation_space.low, dtype=np.float32)
             self.observation_space = gym.spaces.Box(low=self.observation_space.low, high=self.observation_space.high,
-                                                   shape=self.observation_space.shape,
-                                                   dtype=self.observation_space.dtype)
+                                                    shape=self.observation_space.shape,
+                                                    dtype=self.observation_space.dtype)
         elif isinstance(self.observation_space, gymnasium.spaces.Discrete):
             # self.observation_space = gym.spaces.Discrete(self.observation_space.n + 2)
             self.observation_space = gym.spaces.Discrete(self.observation_space.n)
@@ -68,11 +76,12 @@ class ObsInfoWrapper(gym.Wrapper):
         if done:
             ep_rew = self.zt
             ep_len = self.cur_timesteps
-            ep_info = {"r": ep_rew, "l": ep_len}
+            ep_info = { "r": ep_rew, "l": ep_len }
             info["episode"] = ep_info
 
         # augmented_state = self._augment_state(next_obs, self.zt)
         return next_obs, reward[self.reward_dim_indices], done, info
+
 
 class MultiEnv_UtilityFunction(VecEnvWrapper):
     def __init__(
@@ -93,11 +102,11 @@ class MultiEnv_UtilityFunction(VecEnvWrapper):
         self.zt = np.zeros([self.num_envs, self.reward_dim])
         self.gamma = discount_factor  # same to gamma for RL
         self.action_space = venv.action_space
-        
+
         if self.augment_state:
-            low = np.hstack([venv.observation_space.low, np.full((self.reward_dim, ), -np.inf)])
-            high = np.hstack([venv.observation_space.high, np.full((self.reward_dim, ), np.inf)])
-            
+            low = np.hstack([venv.observation_space.low, np.full((self.reward_dim,), -np.inf)])
+            high = np.hstack([venv.observation_space.high, np.full((self.reward_dim,), np.inf)])
+
             self.observation_space = gym.spaces.Box(low=low, high=high,
                                                     shape=low.shape,
                                                     dtype=venv.observation_space.dtype)
@@ -105,8 +114,7 @@ class MultiEnv_UtilityFunction(VecEnvWrapper):
             self.max_val = self.utility_function.max_val[np.newaxis, :]
         else:
             self.observation_space = venv.observation_space
-        
-            
+
     def step_wait(self):
         return self.venv.step_wait()
 
@@ -144,8 +152,9 @@ class MultiEnv_UtilityFunction(VecEnvWrapper):
                 for index, info_env in enumerate(info):
                     if 'terminal_observation' in info_env:
                         assert done[index]
-                        info_env['terminal_observation'] = np.concatenate([info_env['terminal_observation'], normalized_return[index]], 0)
-            
+                        info_env['terminal_observation'] = np.concatenate(
+                            [info_env['terminal_observation'], normalized_return[index]], 0)
+
             self.total_reward[done] = 0.0
             self.zt[done] = 0.0
         # Augment state with reward gained

@@ -7,9 +7,12 @@ import gym
 import gymnasium
 from MORL_stablebaselines3.envs.utils import Array
 import math
+
+
 # from MORL_stablebaselines3.morl.utility_function_torch import Utility_Function
 def morl_env_wrapper(cls):
     """ Class decorator for sauteing an environment. """
+
     class MORLEnv_UtilityFunction(cls):
         def __init__(
                 self,
@@ -30,7 +33,7 @@ def morl_env_wrapper(cls):
             self.gamma = discount_factor  # same to gamma for RL
             if isinstance(self.action_space, gymnasium.spaces.Box):
                 self.action_space = gym.spaces.Box(low=self.action_space.low, high=self.action_space.high,
-                                               shape=self.action_space.shape, dtype=self.action_space.dtype)
+                                                   shape=self.action_space.shape, dtype=self.action_space.dtype)
             elif isinstance(self.action_space, gymnasium.spaces.Discrete):
                 self.action_space = gym.spaces.Discrete(self.action_space.n)
             # IPython.embed()
@@ -40,10 +43,10 @@ def morl_env_wrapper(cls):
                 self.obs_low = np.array(np.hstack([self.observation_space.low, np.full(self.zt.shape, -np.inf)]),
                                         dtype=np.float32)
                 self.observation_space = gym.spaces.Box(low=self.obs_low, high=self.obs_high,
-                                                        shape=(self.observation_space.shape[0]+self.zt.shape[0],),
+                                                        shape=(self.observation_space.shape[0] + self.zt.shape[0],),
                                                         dtype=self.observation_space.dtype)
             elif isinstance(self.observation_space, gymnasium.spaces.Discrete):
-                self.observation_space = gym.spaces.Discrete(self.observation_space.n+2)
+                self.observation_space = gym.spaces.Discrete(self.observation_space.n + 2)
 
         def update_utility_function(self, func):
             self.utility_function = func
@@ -80,7 +83,7 @@ def morl_env_wrapper(cls):
             if done:
                 ep_rew = self.zt
                 ep_len = self.cur_timesteps
-                ep_info = {"r": ep_rew, "l": ep_len}
+                ep_info = { "r": ep_rew, "l": ep_len }
                 info["episode"] = ep_info
 
             augmented_state = self._augment_state(next_obs, self.zt)
@@ -93,6 +96,7 @@ def morl_env_wrapper(cls):
         #         # shape reward for model-based predictions
         #         reward = self.utility_function.get_logits(self.zt)
         #     return reward
+
     return MORLEnv_UtilityFunction
 
 
