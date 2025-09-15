@@ -246,7 +246,7 @@ class Main(object):
             print(f"Training policy {policy_idx + 1} with {self.total_steps} steps...")
             curtime = time.time()
             return_logger = ReturnLogger(self.utility_dir, self.env_id, self.base_algo, policy_name, 0, self.seed)
-            policy.learn(total_timesteps=self.total_steps, callback=return_logger, progress_bar=True)
+            policy.learn(total_timesteps=self.total_steps, callback=return_logger, progress_bar=False)
             print(f"Training one policy with one utility function using time {time.time() - curtime:.2f} seconds.")
             policy.save(f'{self.utility_dir}/policy-{policy_name}')
             learned_policies.append(policy)
