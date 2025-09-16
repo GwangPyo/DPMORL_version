@@ -1,6 +1,6 @@
 import fire
 import pandas as pd
-from stable_baselines3 import PPO, SAC
+from sbx import PPO, SAC
 import os
 from stable_baselines3.common.utils import set_random_seed
 import mo_gymnasium

@@ -50,4 +50,6 @@ RUN pip3 install  \
     "gym==0.23"
 
 RUN pip3 install "stable-baselines3==1.8.0" --no-deps
+RUN pip3 install "sbx-rl"
+
 
