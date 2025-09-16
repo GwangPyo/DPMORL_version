@@ -9,7 +9,7 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvIndices,
 from stable_baselines3.common.vec_env.util import dict_to_obs, obs_space_info
 import jax
 
-copy_obs_dict = lambda a: jax.tree_map(lambda x: x.copy, a)
+copy_obs_dict = lambda a: jax.tree_util.tree_map(lambda x: x.copy, a)
 
 
 class DummyVecEnv(VecEnv):
