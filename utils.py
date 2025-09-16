@@ -7,10 +7,18 @@ import numpy as np
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvIndices, VecEnvObs, VecEnvStepReturn
 from stable_baselines3.common.vec_env.util import dict_to_obs, obs_space_info
-import jax
+from typing import Dict
 
-copy_obs_dict = lambda a: jax.tree_util.tree_map(lambda x: x.copy(), a)
 
+def copy_obs_dict(obs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    """
+    Deep-copy a dict of numpy arrays.
+
+    :param obs: a dict of numpy arrays.
+    :return: a dict of copied numpy arrays.
+    """
+    assert isinstance(obs, OrderedDict), f"unexpected type for observations '{type(obs)}'"
+    return OrderedDict([(k, np.copy(v)) for k, v in obs.items()])
 
 class DummyVecEnv(VecEnv):
     """
