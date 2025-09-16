@@ -47,8 +47,9 @@ RUN pip3 install  \
     imageio \
     gymnasium_robotics \
     pynvml\
-    "gym==0.23"
+    "gym==0.23" \
 
+ENV XLA_PYTHON_CLIENT_PREALLOCATE=False
 RUN pip3 install "stable-baselines3==1.8.0" --no-deps
 RUN pip3 install "sbx-rl"
 
