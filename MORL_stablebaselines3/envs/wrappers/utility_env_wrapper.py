@@ -1,14 +1,6 @@
-import IPython
 import numpy as np
 import torch
-from typing import Optional
-from gym import Env
-import gym
 import gymnasium
-from MORL_stablebaselines3.envs.utils import Array
-import math
-# from MORL_stablebaselines3.morl.utility_function_torch import Utility_Function
-import sys
 from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
 
 
@@ -19,7 +11,7 @@ def get_reward_dim(env) -> int:
         return get_reward_dim(env.unwrapped)
 
 
-class ObsInfoWrapper(gym.Wrapper):
+class ObsInfoWrapper(gymnasium.Wrapper):
     def __init__(
             self,
             env,
@@ -34,19 +26,19 @@ class ObsInfoWrapper(gym.Wrapper):
         self.actual_reward_dim = get_reward_dim(self.env)
         self.zt = np.zeros(self.actual_reward_dim)
         if isinstance(self.action_space, gymnasium.spaces.Box):
-            self.action_space = gym.spaces.Box(low=self.action_space.low, high=self.action_space.high,
+            self.action_space = gymnasium.spaces.Box(low=self.action_space.low, high=self.action_space.high,
                                                shape=self.action_space.shape, dtype=self.action_space.dtype)
         elif isinstance(self.action_space, gymnasium.spaces.Discrete):
-            self.action_space = gym.spaces.Discrete(self.action_space.n)
+            self.action_space = gymnasium.spaces.Discrete(self.action_space.n)
         if isinstance(self.observation_space, gymnasium.spaces.Box):
             self.obs_high = np.array(self.observation_space.high, dtype=np.float32)
             self.obs_low = np.array(self.observation_space.low, dtype=np.float32)
-            self.observation_space = gym.spaces.Box(low=self.observation_space.low, high=self.observation_space.high,
+            self.observation_space = gymnasium.spaces.Box(low=self.observation_space.low, high=self.observation_space.high,
                                                     shape=self.observation_space.shape,
                                                     dtype=self.observation_space.dtype)
         elif isinstance(self.observation_space, gymnasium.spaces.Discrete):
             # self.observation_space = gym.spaces.Discrete(self.observation_space.n + 2)
-            self.observation_space = gym.spaces.Discrete(self.observation_space.n)
+            self.observation_space = gymnasium.spaces.Discrete(self.observation_space.n)
 
     def reset(self) -> np.ndarray:
         """Resets the environment."""
@@ -70,7 +62,7 @@ class ObsInfoWrapper(gym.Wrapper):
         info['zt'] = zt_next
         self.cur_timesteps += 1
         self.zt = zt_next
-        if hasattr(self.env, "_max_episode_steps") and self.cur_timesteps >= self.env._max_episode_steps:
+        if truncated:
             done = True
             info['max_steps_reached'] = True
         if done:
@@ -80,7 +72,7 @@ class ObsInfoWrapper(gym.Wrapper):
             info["episode"] = ep_info
 
         # augmented_state = self._augment_state(next_obs, self.zt)
-        return next_obs, reward[self.reward_dim_indices], done, info
+        return next_obs, reward[self.reward_dim_indices], done, truncated, info
 
 
 class MultiEnv_UtilityFunction(VecEnvWrapper):
@@ -107,7 +99,7 @@ class MultiEnv_UtilityFunction(VecEnvWrapper):
             low = np.hstack([venv.observation_space.low, np.full((self.reward_dim,), -np.inf)])
             high = np.hstack([venv.observation_space.high, np.full((self.reward_dim,), np.inf)])
 
-            self.observation_space = gym.spaces.Box(low=low, high=high,
+            self.observation_space = gymnasium.spaces.Box(low=low, high=high,
                                                     shape=low.shape,
                                                     dtype=venv.observation_space.dtype)
             self.min_val = self.utility_function.min_val[np.newaxis, :]
