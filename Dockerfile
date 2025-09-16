@@ -51,6 +51,8 @@ RUN pip3 install  \
 
 ENV XLA_PYTHON_CLIENT_PREALLOCATE=False
 RUN pip3 install "stable-baselines3==1.8.0" --no-deps
-RUN pip3 install "sbx-rl"
+
+RUN pip3 install "sbx-rl" \
+                "jax[cuda12]"
 
 
