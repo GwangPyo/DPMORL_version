@@ -139,6 +139,7 @@ def run_one_episode(policy, test_env, reward_dim):
         action, _ = policy.predict(obs)
         obs, reward, done, timeout, info = test_env.step(action)
         score_vec += reward
+        done = done or timeout
     return score_vec
 
 
@@ -240,9 +241,9 @@ class Main(object):
                                **self.algo_kwarg)
 
             if policy_idx < self.num_utility_programmed:
-                policy_name = f'program-{policy_idx}'
+                policy_name = f'program-{policy_idx}-{self.seed}'
             else:
-                policy_name = f'pretrain-{policy_idx - self.num_utility_programmed}'
+                policy_name = f'pretrain-{policy_idx - self.num_utility_programmed}-{self.seed}'
             print(f"Training policy {policy_idx + 1} with {self.total_steps} steps...")
             curtime = time.time()
             return_logger = ReturnLogger(self.utility_dir, self.env_id, self.base_algo, policy_name, 0, self.seed)
