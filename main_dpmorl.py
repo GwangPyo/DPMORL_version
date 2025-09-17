@@ -222,8 +222,8 @@ class Main(object):
         for policy_idx in range(self.num_total_policies):
             utility_function = self.utility_loader.get_utility(policy_idx)
             if self.env_key in self.normalization_data.keys():
-                utility_function.min_val = self.normalization_data[self.env_key]['min'][0][self.reward_dim_indices]
-                utility_function.max_val = self.normalization_data[self.env_key]['max'][0][self.reward_dim_indices]
+                utility_function.min_val = self.normalization_data[self.env_key]['min'][0][self.reward_dim_indices] / 2 # divide in 2, for max epi
+                utility_function.max_val = self.normalization_data[self.env_key]['max'][0][self.reward_dim_indices] / 2 
                 print('normalization data:', self.normalization_data[self.env_key])
             else:
                 print('normalization data: None')
