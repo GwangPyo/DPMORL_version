@@ -130,7 +130,7 @@ class Main(object):
                  reward_dim_indices: str = '',
                  exp_name: str = 'dpmorl',
                  max_num_policies: int = 20,
-                 total_steps: int = int(5e+5),
+                 total_steps: int = int(5e+4),
                  iters: int = 50,
                  num_cpu: int = 20,
                  num_eval: int = 100,
@@ -231,8 +231,8 @@ class Main(object):
         train_data = evaluate(learned_policies, load_env(mode='train', seed=self.seed,), self.num_eval, self.reward_dim)
         os.makedirs('results', exist_ok=True)
         os.makedirs(f'results/{self.env_id}', exist_ok=True)
-        test_data.to_csv(f'results/{self.env_id}/DPMORL_{self.seed}.csv')
-        train_data.to_csv(f'results/{self.env_id}/DPMORL_{self.seed}.csv')
+        test_data.to_csv(f'results/{self.env_id}/DPMORL_test_{self.seed}.csv')
+        train_data.to_csv(f'results/{self.env_id}/DPMORL_train_{self.seed}.csv')
 
     def __train_env_builder(self, ):
 
