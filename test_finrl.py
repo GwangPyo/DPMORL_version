@@ -130,7 +130,7 @@ class Main(object):
                  reward_dim_indices: str = '',
                  exp_name: str = 'dpmorl',
                  max_num_policies: int = 20,
-                 total_steps: int = int(1e7),
+                 total_steps: int = int(5e+5),
                  iters: int = 50,
                  num_cpu: int = 20,
                  num_eval: int = 100,
