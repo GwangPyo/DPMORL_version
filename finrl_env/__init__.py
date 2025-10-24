@@ -1,4 +1,5 @@
 from finrl_env.mo_envs import StockTradingMOEnv
+from typing import Literal
 
 # Seed shuffling prime numbers
 PRIME_1 = 8610829
