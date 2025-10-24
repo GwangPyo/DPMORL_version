@@ -11,7 +11,7 @@ PRIME_3 = 1497233
 
 
 def load_env(mode: Literal['train', 'valid', 'test'] = 'train', seed: int = 42):
-    path = { "train": 'train_df.csv', 'test': 'valid_df.csv' }
+    path = { "train": 'train_df.csv', 'test': 'test_df.csv' }
     options = { "train": { "randomize_day": True,
                            "bidding": "adv_uniform",
                            "stop_loss_calculation": 'low',
