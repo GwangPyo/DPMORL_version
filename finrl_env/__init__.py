@@ -1,6 +1,7 @@
 from finrl_env.mo_envs import StockTradingMOEnv
 from typing import Literal
 import pandas as pd
+from gymnasium.wrappers import RescaleAction
 
 
 # Seed shuffling prime numbers
