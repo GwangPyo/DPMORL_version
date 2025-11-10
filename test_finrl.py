@@ -20,6 +20,8 @@ import time
 from typing import Literal, Tuple
 import os
 from tqdm import tqdm
+from copy import deepcopy
+
 
 
 def reward_dim(env) -> int:
@@ -72,11 +74,10 @@ def evaluate_finance(policy_set, test_env, num_eval, reward_dim)  -> Tuple[pd.Da
             score, infos = iter_finance_once(test_env, policy,  reward_dim,
                                              episode_id=execution, policy_id=policy_idx)
             row = {
-                "name": name,
+                "name": f"dpmorl_{policy_idx}",
                 "execution": execution,
             }
-            for i in range(reward_dim):
-                row[f"weight_{i + 1}"] = w[i]
+
             for i in range(reward_dim):
                 row[f"score_{i + 1}"] = score[i]
             rows.append(row)
@@ -172,7 +173,7 @@ class Main(object):
                  reward_dim_indices: str = '',
                  exp_name: str = 'dpmorl',
                  max_num_policies: int = 20,
-                 total_steps: int = int(5e+4),
+                 total_steps: int = int(3e+6),
                  iters: int = 50,
                  num_cpu: int = 20,
                  num_eval: int = 100,
