@@ -27,6 +27,73 @@ def reward_dim(env) -> int:
     except AttributeError:
         return reward_dim(env.unwrapped)
 
+def iter_finance_once(test_env, model, num_rewards: int,
+                      policy_id: int,
+                      episode_id: int):
+    obs, init_info = test_env.reset()
+    done = False
+    score = np.zeros(shape=(num_rewards,))
+    init_info['episode_id'] = episode_id
+    init_info['policy_id'] = policy_id
+    infos = [deepcopy(init_info)]
+
+    while not done:
+        action, _ = model.predict(obs)
+        obs, reward, done, timeout, info = test_env.step(action)
+        score += reward
+        done = done or timeout
+        info['episode_id'] = episode_id
+        info['policy_id'] = policy_id
+        infos.append(deepcopy(info))
+    return score, infos
+
+
+def evaluate(policy_set, test_env, num_eval, reward_dim) -> pd.DataFrame:
+    data = []
+    for policy_idx, policy in enumerate(policy_set):
+        for exec_idx in range(num_eval):
+            data_point = { }
+            score_vec = run_one_episode(policy, test_env, reward_dim)
+            data_point['policy_id'] = policy_idx
+            data_point['execution_id'] = exec_idx
+            for dim_idx, score in enumerate(score_vec):
+                data_point[f'score_{dim_idx}'] = score
+            data.append(data_point)
+    return pd.DataFrame(data)
+
+
+def evaluate_finance(policy_set, test_env, num_eval, reward_dim)  -> Tuple[pd.DataFrame, pd.DataFrame]:
+    rows = []
+    weight_id = 1
+    details = []
+    for policy_idx, policy in tqdm(enumerate(policy_set)):
+        for execution in range(1, num_eval + 1):
+            score, infos = iter_finance_once(test_env, policy,  reward_dim,
+                                             episode_id=execution, policy_id=policy_idx)
+            row = {
+                "name": name,
+                "execution": execution,
+            }
+            for i in range(reward_dim):
+                row[f"weight_{i + 1}"] = w[i]
+            for i in range(reward_dim):
+                row[f"score_{i + 1}"] = score[i]
+            rows.append(row)
+            details = details + infos
+        weight_id += 1
+    return pd.DataFrame(rows), pd.DataFrame(details)
+
+
+def run_one_episode(policy, test_env, reward_dim):
+    obs, _ = test_env.reset()
+    done = False
+    score_vec = np.zeros(shape=reward_dim)
+    while not done:
+        action, _ = policy.predict(obs)
+        obs, reward, done, timeout, info = test_env.step(action)
+        score_vec += reward
+        done = done or timeout
+    return score_vec
 
 class UtilityFunctionLoader(object):
     def __init__(self,
@@ -96,32 +163,6 @@ class UtilityFunctionLoader(object):
         else:
             utility_function = self.pretrained_utility_functions[policy_idx - self.num_utility_programmed]
         return utility_function
-
-
-def evaluate(policy_set, test_env, num_eval, reward_dim) -> pd.DataFrame:
-    data = []
-    for policy_idx, policy in enumerate(policy_set):
-        for exec_idx in range(num_eval):
-            data_point = { }
-            score_vec = run_one_episode(policy, test_env, reward_dim)
-            data_point['policy_id'] = policy_idx
-            data_point['execution_id'] = exec_idx
-            for dim_idx, score in enumerate(score_vec):
-                data_point[f'score_{dim_idx}'] = score
-            data.append(data_point)
-    return pd.DataFrame(data)
-
-
-def run_one_episode(policy, test_env, reward_dim):
-    obs, _ = test_env.reset()
-    done = False
-    score_vec = np.zeros(shape=reward_dim)
-    while not done:
-        action, _ = policy.predict(obs)
-        obs, reward, done, timeout, info = test_env.step(action)
-        score_vec += reward
-        done = done or timeout
-    return score_vec
 
 
 class Main(object):
@@ -227,11 +268,12 @@ class Main(object):
             print(f"Training one policy with one utility function using time {time.time() - curtime:.2f} seconds.")
             policy.save(f'{self.utility_dir}/policy-{policy_name}')
             learned_policies.append(policy)
-        test_data = evaluate(learned_policies, self.test_env, self.num_eval, self.reward_dim)
+        test_data, details = evaluate_finance(learned_policies, self.test_env, self.num_eval, self.reward_dim)
         train_data = evaluate(learned_policies, load_env(mode='train', seed=self.seed,), self.num_eval, self.reward_dim)
         os.makedirs('results', exist_ok=True)
         os.makedirs(f'results/{self.env_id}', exist_ok=True)
         test_data.to_csv(f'results/{self.env_id}/DPMORL_test_{self.seed}.csv')
+        details.to_csv(f'results/{self.env_id}/DPMORL_test_detail_{self.seed}.csv')
         train_data.to_csv(f'results/{self.env_id}/DPMORL_train_{self.seed}.csv')
 
     def __train_env_builder(self, ):

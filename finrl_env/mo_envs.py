@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from finrl.meta.env_stock_trading.env_stocktrading import StockTradingEnv
 import pandas as pd
 from copy import deepcopy
-from typing import Literal, Sequence
+from typing import Literal, Sequence, Tuple
 import numpy as np
 from collections import defaultdict
 
@@ -567,7 +567,7 @@ class StockTradingMOEnv(StockTradingEnvExtension):
         self.cash_coef = cash_coef
         self.portfolio_value_coef = portfolio_value_coef
         self.asset_class = { 'Commodities': ['XLE', 'GLD', 'COMT'],
-                             'Bonds': ['TLT', 'IEF', 'JNK'],
+                             'Bonds': ['TLT', 'TIP', 'JNK'],
                              'Equities': ['SPY', 'QQQ', 'SOXX']
                              }
 
@@ -597,28 +597,35 @@ class StockTradingMOEnv(StockTradingEnvExtension):
         obs, info = super().reset(seed=seed, options=options)
         info['loss_cut_amount'] = 0
         info['n_trades'] = 0
+        _, asset_dict = self.classified_asset()
+        info.update(**asset_dict)
+        info['day'] = self.day
 
         return self.process_obs(), info
 
-    def classified_asset(self) -> dict:
+    def classified_asset(self) -> Tuple[dict, dict]:
         vec_asset = self.vec_asset
         ret = defaultdict(list)
+        asset_dict = defaultdict(list)
         for class_name, tickers in self.asset_class.items():
             for ticker in tickers:
                 if ticker in self.ticker_to_idx:
                     ret[class_name].append(vec_asset[self.ticker_to_idx[ticker]].item())
+                    asset_dict[ticker] = vec_asset[self.ticker_to_idx[ticker]].item()
         ret['Cash'] = [vec_asset[-1].item()]
-        return ret
+        asset_dict['Cash'] = vec_asset[-1].item()
+
+        return ret, asset_dict
 
     def classified_asset_value(self):
-        assets = self.classified_asset()
-        return np.asarray([sum(assets[k]) for k in self.asset_keys])
+        assets, asset_dict = self.classified_asset()
+        return np.asarray([sum(assets[k]) for k in self.asset_keys]), asset_dict
 
     def step(self, actions):
-        prev = self.classified_asset_value()
+        prev, _  = self.classified_asset_value()
         prev_portfolio_value = prev.sum().item()
         obs, reward, done, timeout, info = super().step(actions)
-        after = self.classified_asset_value()
+        after, asset_dict = self.classified_asset_value()
 
         p = after / after.sum()
         log_p = np.log(np.clip(p, 1e-6, 1))
@@ -641,6 +648,8 @@ class StockTradingMOEnv(StockTradingEnvExtension):
         vec_reward = [lower_volatility * self.reward_scaling * 0.1,
                       entropy,
                       log_delta * self.portfolio_value_coef, ]
+        info.update(**asset_dict)
+        info['day'] = self.day
 
         return self.process_obs(), np.asarray(vec_reward), done, timeout, info
 

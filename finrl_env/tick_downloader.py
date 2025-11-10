@@ -8,8 +8,8 @@ import numpy as np
 TRAIN_START_DATE = '2019-05-01'
 TRAIN_END_DATE = '2024-12-31'
 VALID_START_DATE = '2025-01-01'
-VALID_END_DATE = '2025-04-31'
-TEST_START_DATE = '2025-04-31'
+VALID_END_DATE = '2025-06-30'
+TEST_START_DATE = '2025-07-01'
 TEST_END_DATE = '2025-09-30'
 
 INDICATORS = [
@@ -87,7 +87,8 @@ if __name__ == '__main__':
 
     tech_indicator_val = df[tech_indicators].values
     # shift technical indicators so that a model cannot leverage future data
-    df[tech_indicators] = np.roll(tech_indicator_val, axis=0, shift=1)
+    df[tech_indicators] = df.groupby('tic', sort=False)[tech_indicators].shift(1)
+    df['prev_close'] =df.groupby('tic', sort=False)['close'].shift(1)
     df['volume'] = np.log1p(df['volume']) / 5
     df = df.rename(columns={ "volume": "log_volume",})
 
@@ -96,8 +97,7 @@ if __name__ == '__main__':
     test_df = data_split(df, TEST_START_DATE, TEST_END_DATE)
 
     train_df.to_csv("train_df.csv", index=True)
+    print(train_df[train_df.tic == 'SOXX'])
     print(train_df.isna().any())
-    valid_df.to_csv("valid_df.csv", index=True)
+    valid_df.to_csv("test_df.csv", index=True)
     print(valid_df.isna().any())
-    test_df.to_csv("test_df.csv", index=True)
-    print(test_df.isna().any())
