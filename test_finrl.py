@@ -19,7 +19,7 @@ import pickle
 import time
 from typing import Literal, Tuple
 import os
-import tqdm
+from tqdm import tqdm
 
 
 def reward_dim(env) -> int:
