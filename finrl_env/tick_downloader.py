@@ -25,7 +25,7 @@ INDICATORS = [
     "close_100_ema",
 ]
 
-asset_class = { 'Commodities': ['XLE', 'GLD', 'COMT'],
+asset_class = { 'Commodities': ['XLE', 'GLD', 'SLV'],
                 'Bonds': ['TLT', 'TIP', 'JNK'],
                 'Equities': ['SPY', 'QQQ', 'SOXX']
                 }
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     tech_indicators = ['macd', 'rsi_7', 'rsi_14',
                        'cci_7', "cci_14", 'volume',
                        'close_10_ema', 'close_5_ema', "close_50_ema",
-                       'close_20_ema', 'close_100_ema', 'vix', 'gold_norm_open',
+                       'close_20_ema', 'close_100_ema', 'vix',
                        'gold_norm_high', 'gold_norm_low', 'gold_norm_close', 'gc_open']
 
     tech_indicator_val = df[tech_indicators].values
@@ -99,5 +99,7 @@ if __name__ == '__main__':
     train_df.to_csv("train_df.csv", index=True)
     print(train_df[train_df.tic == 'SOXX'])
     print(train_df.isna().any())
-    valid_df.to_csv("test_df.csv", index=True)
+    valid_df.to_csv("valid_df.csv", index=True)
     print(valid_df.isna().any())
+    test_df.to_csv("test_df.csv", index=True)
+    print(test_df.isna().any())

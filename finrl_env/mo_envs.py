@@ -62,8 +62,17 @@ class StockTradingEnvExtension(StockTradingEnv):
         if tech_indicator_list == 'auto':
             # dataframe other than close, high, low, volume
             # they are not available in real-world scenario when the trading is happening
-            tech_indicator_list = ['macd', 'rsi_7', 'rsi_14', 'cci_7', 'cci_14', 'close_10_ema', 'close_5_ema',
-                                   'close_20_ema', 'close_50_ema', 'close_100_ema', 'vix', 'log_volume'
+            tech_indicator_list = ['macd',
+                                   'rsi_7', 'rsi_14',
+                                   'cci_7', 'cci_14',
+                                   'close_10_ema', 'close_5_ema',
+                                   'close_20_ema', 'close_50_ema', 'close_100_ema',
+                                   # 'vix',
+                                   'log_volume',
+                                   # today
+                                   'gold_norm_open',
+                                   # previous day
+                                   'gold_norm_high', 'gold_norm_low', 'gold_norm_close',
                                     ]
 
         # calculate sotck dimension, and set state and action space automatically
@@ -421,7 +430,7 @@ class StockTradingEnvExtension(StockTradingEnv):
             argsort_actions = np.argsort(actions)
             sell_index = argsort_actions[: np.where(actions < 0)[0].shape[0]]
             buy_index = argsort_actions[::-1][: np.where(actions > 0)[0].shape[0]]
-            share_before_selling = self.share
+            # share_before_selling = self.share
 
             for index in sell_index:
                 # print(f"Num shares before: {self.state[index+self.stock_dim+1]}")
@@ -538,12 +547,12 @@ class StockTradingMOEnv(StockTradingEnvExtension):
     desired_log_distribution = np.log(np.asarray([0.1, 0.2, 0.5, 0.2]))
     def __init__(self,
                  df: pd.DataFrame,
-                 hmax: int = 100,
+                 hmax: int = 500,
                  initial_amount: int = 100_000,
                  num_stock_shares: Sequence[int] | None = None,
                  buy_cost_pct: Sequence[float] | float = 0.001,
                  sell_cost_pct: Sequence[float] | float = 0.001,
-                 reward_scaling: float = 1e-3,
+                 reward_scaling: float = 1e-4,
                  cash_coef: float = 1.,
                  portfolio_value_coef: float = 100.,
                  tech_indicator_list: list[str] | Literal['auto'] = 'auto',
@@ -566,7 +575,7 @@ class StockTradingMOEnv(StockTradingEnvExtension):
                  ):
         self.cash_coef = cash_coef
         self.portfolio_value_coef = portfolio_value_coef
-        self.asset_class = { 'Commodities': ['XLE', 'GLD', 'COMT'],
+        self.asset_class = { 'Commodities': ['XLE', 'GLD', 'SLV'],
                              'Bonds': ['TLT', 'TIP', 'JNK'],
                              'Equities': ['SPY', 'QQQ', 'SOXX']
                              }
@@ -631,9 +640,7 @@ class StockTradingMOEnv(StockTradingEnvExtension):
         log_p = np.log(np.clip(p, 1e-6, 1))
 
         # how uniform the asset distribution is?
-        # clipping log only: because lim p->0+ p log(p) = 0.
-        # total clip: full uniform portfolio does not mean anything
-        entropy = (-(p * log_p).sum() - 1) * 0.05
+        entropy = (-(p * log_p).sum()) - 0.5
         after_portfolio_value = after.sum().item()
         # cash_ratio = (after[-1] /after_portfolio_value)
         # too low cash is penalty
@@ -642,12 +649,14 @@ class StockTradingMOEnv(StockTradingEnvExtension):
         portfolio_value_rate = after_portfolio_value / prev_portfolio_value
         log_delta = np.where(after_portfolio_value < 1e-6, -10, np.log(portfolio_value_rate))
         # this controls MDD, sortino ratio, ...
-        lower_volatility = np.clip(after_portfolio_value - prev_portfolio_value, -np.inf, 0).sum()
 
         # num trades for boosting exploration.
-        vec_reward = [lower_volatility * self.reward_scaling * 0.1,
-                      entropy,
-                      log_delta * self.portfolio_value_coef, ]
+        vec_reward = [ np.clip(after_portfolio_value - prev_portfolio_value,-np.inf, 0)  * self.reward_scaling, # lower log volatility
+                       entropy * 0.1,
+                      log_delta * self.portfolio_value_coef, # log return
+
+                      # linear_delta * self.reward_scaling
+                      ]
         info.update(**asset_dict)
         info['day'] = self.day
 
@@ -663,15 +672,29 @@ class StockTradingMOEnv(StockTradingEnvExtension):
         gold_norm_close = gold_norm_close['gold_norm_close']
         return np.asarray(gold_norm_close.values).copy()
 
+    def gold_norm_open(self):
+
+        today = self.df.loc[self.day, :]
+        gold_norm_open = today['gold_norm_open']
+        return np.asarray(gold_norm_open.values).copy()
+
+    def open_price_today(self):
+
+        today = self.df.loc[self.day, :]
+        open_price = today['open']
+        return np.asarray(open_price.values).copy()
+
+
     def process_obs(self):
         state = np.asarray(self.state).copy()
         tech = state[2 * self.stock_dim + 1:]
 
         obs = np.concatenate(
-            [[np.log1p(state[0])], # cash
-             self.gold_norm_close(),  # NOTE: this is not data leakage. This is the previous day's closing price. See the comment above.
+            [[np.log1p(state[0]/self.initial_amount)], # cash
+             np.log(self.open_price_today()) - np.log1p(state[0]/self.initial_amount),
              np.log1p(self.share) / 5,
-             np.log1p(self.avg_buy_price.copy()) / 5,
+             np.log1p(self.avg_buy_price.copy() / self.open_price_today()),
              tech / 10,], axis=0) # NOTE: also technical indicators are from the previous day.
-
         return obs
+
+
