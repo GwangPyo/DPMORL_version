@@ -40,6 +40,10 @@ ENV_ID_TO_NAME = {
     "mo-hopper-v5": "Hopper",
     "mo-reacher-v5": "Reacher",
     "minecart-v0": "Minecart",
+    # newly added
+    "mo-walker2d-v5": "Walker2d",
+    "mo-hopper-2obj-v5": "Hopper2D",
+    "mo-ant-v5": "Ant",
 }
 
 
@@ -223,11 +227,20 @@ class Main(object):
             utility_function = self.utility_loader.get_utility(policy_idx)
             try:
                 if self.env_key in self.normalization_data.keys():
-                    utility_function.min_val = self.normalization_data[self.env_key]['min'][0][self.reward_dim_indices]
-                    utility_function.max_val = self.normalization_data[self.env_key]['max'][0][self.reward_dim_indices]
+                    utility_function.min_val = self.normalization_data[self.env_key]['min'][0][self.reward_dim_indices] / 2
+                    utility_function.max_val = self.normalization_data[self.env_key]['max'][0][self.reward_dim_indices] / 2
                     print('normalization data:', self.normalization_data[self.env_key])
                 else:
                     print('normalization data: None')
+                    if self.env_id == "mo-walker2d-v5":
+                        utility_function.min_val = np.array([300., -600.]) 
+                        utility_function.max_val = np.array([2200., 200.]) 
+                    if self.env_id == "mo-hopper-2obj-v5":
+                        utility_function.min_val = np.array([0., 0.]) 
+                        utility_function.max_val = np.array([2000., 2000.]) 
+                    if self.env_id == "mo-ant-v5":
+                        utility_function.min_val = np.array([0., 0., -2000.]) 
+                        utility_function.max_val = np.array([3000., 2000., 100.]) 
             except KeyError:
                 print('normalization data: None')
             optim, optim_init_state = None, None

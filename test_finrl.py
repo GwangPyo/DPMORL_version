@@ -173,7 +173,7 @@ class Main(object):
                  reward_dim_indices: str = '',
                  exp_name: str = 'dpmorl',
                  max_num_policies: int = 20,
-                 total_steps: int = int(3e+6),
+                 total_steps: int = int(7.4e5), # 740000
                  iters: int = 50,
                  num_cpu: int = 20,
                  num_eval: int = 100,
@@ -246,6 +246,10 @@ class Main(object):
         for policy_idx in range(self.num_total_policies):
             utility_function = self.utility_loader.get_utility(policy_idx)
             print('normalization data: None')
+            utility_function.min_val = np.array([-100., -71., -575.])
+            utility_function.max_val = np.array([0., 125.85, 250])
+
+
             optim, optim_init_state = None, None
             self.utility_functions_optims.append([utility_function, optim, optim_init_state])
             env = DummyVecEnv(
