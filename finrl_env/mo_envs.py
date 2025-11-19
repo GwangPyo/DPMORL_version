@@ -62,18 +62,18 @@ class StockTradingEnvExtension(StockTradingEnv):
         if tech_indicator_list == 'auto':
             # dataframe other than close, high, low, volume
             # they are not available in real-world scenario when the trading is happening
-            tech_indicator_list = ['macd',
-                                   'rsi_7', 'rsi_14',
-                                   'cci_7', 'cci_14',
-                                   'close_10_ema', 'close_5_ema',
-                                   'close_20_ema', 'close_50_ema', 'close_100_ema',
-                                   # 'vix',
-                                   'log_volume',
-                                   # today
-                                   'gold_norm_open',
-                                   # previous day
-                                   'gold_norm_high', 'gold_norm_low', 'gold_norm_close',
+
+            tech_indicator_list = ['macd', # ONE DAY BEFORE
+                                   'rsi_7', 'rsi_14', # ONE DAY BEFORE
+                                   'cci_7', 'cci_14',# ONE DAY BEFORE
+                                   'close_10_ema', 'close_5_ema',# ONE DAY BEFORE
+                                   'close_20_ema', 'close_50_ema', 'close_100_ema',# ONE DAY BEFORE
+                                   'log_prev_close',
+                                   'log_prev_volume',
+                                   'log_prev_high',
+                                   'log_prev_low',
                                     ]
+
 
         # calculate sotck dimension, and set state and action space automatically
         stock_dim = len(df['tic'].unique())
@@ -543,8 +543,7 @@ class StockTradingEnvExtension(StockTradingEnv):
 
 
 class StockTradingMOEnv(StockTradingEnvExtension):
-    # commodity 10%. Bond 20%. Stock 50%, cash 20%
-    desired_log_distribution = np.log(np.asarray([0.1, 0.2, 0.5, 0.2]))
+
     def __init__(self,
                  df: pd.DataFrame,
                  hmax: int = 500,
@@ -691,10 +690,10 @@ class StockTradingMOEnv(StockTradingEnvExtension):
 
         obs = np.concatenate(
             [[np.log1p(state[0]/self.initial_amount)], # cash
-             np.log(self.open_price_today()) - np.log1p(state[0]/self.initial_amount),
-             np.log1p(self.share) / 5,
+             np.log(self.open_price_today()),
+             self.share / 100 - 3,
              np.log1p(self.avg_buy_price.copy() / self.open_price_today()),
-             tech / 10,], axis=0) # NOTE: also technical indicators are from the previous day.
+             tech,], axis=0) # NOTE: also technical indicators are from the previous day.
         return obs
 
 
