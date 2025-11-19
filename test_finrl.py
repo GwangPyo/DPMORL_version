@@ -247,7 +247,7 @@ class Main(object):
             utility_function = self.utility_loader.get_utility(policy_idx)
             print('normalization data: None')
             utility_function.min_val = np.array([-100., -71., -575.])
-            utility_function.max_val = np.array([0., 125.85., 250])
+            utility_function.max_val = np.array([0., 125.85, 250])
 
 
             optim, optim_init_state = None, None
