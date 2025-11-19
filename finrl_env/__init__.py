@@ -20,7 +20,7 @@ def load_env(mode: Literal['train', 'valid', 'test'] = 'train', seed: int = 42):
 
                 "test": { "randomize_day": False,
                           "bidding": "uniform",
-                          "stop_loss_calculation": 'low',
+                          "stop_loss_calculation": 'close',
                           "seed": (seed * PRIME_2) % int(2 ** 31)
                           }
                 }
