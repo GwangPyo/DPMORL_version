@@ -250,6 +250,7 @@ class Main(object):
     def run(self):
         learned_policies = []
         if self.distribute:
+            print("START", self.start_index, "END", self.end_inex)
             policy_range = range(self.start_index, self.end_inex + 1)
         else:
             policy_range = range(self.num_total_policies)
