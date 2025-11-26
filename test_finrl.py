@@ -184,8 +184,14 @@ class Main(object):
                  max_episode_steps: int = 500,
                  augment_state: bool = False,
                  gpu_id: str = '0',
+                 distribute: bool = True,
+                 start_index: int = 0, # inclusive
+                 end_index: int = 4, # inclusive
                  seed: int = 42
                  ):
+        self.distribute = distribute
+        self.start_index = start_index
+        self.end_inex = end_index
 
         env_id = 'finrl'
         os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_id)
@@ -243,7 +249,12 @@ class Main(object):
 
     def run(self):
         learned_policies = []
-        for policy_idx in range(self.num_total_policies):
+        if self.distribute:
+            policy_range = range(self.start_index, self.end_inex + 1)
+        else:
+            policy_range = range(self.num_total_policies)
+        print("NUM TOTAL POLICY", self.num_total_policies)
+        for policy_idx in policy_range:
             utility_function = self.utility_loader.get_utility(policy_idx)
             print('normalization data: None')
             utility_function.min_val = np.array([-100., -220., -575.])
@@ -274,6 +285,7 @@ class Main(object):
             print(f"Training one policy with one utility function using time {time.time() - curtime:.2f} seconds.")
             policy.save(f'{self.utility_dir}/policy-{policy_name}')
             learned_policies.append(policy)
+        """
         test_data, details = evaluate_finance(learned_policies, self.test_env, self.num_eval, self.reward_dim)
         train_data = evaluate(learned_policies, load_env(mode='train', seed=self.seed,), self.num_eval, self.reward_dim)
         os.makedirs('results', exist_ok=True)
@@ -281,6 +293,7 @@ class Main(object):
         test_data.to_csv(f'results/{self.env_id}/DPMORL_test_{self.seed}.csv')
         details.to_csv(f'results/{self.env_id}/DPMORL_test_detail_{self.seed}.csv')
         train_data.to_csv(f'results/{self.env_id}/DPMORL_train_{self.seed}.csv')
+        """
 
     def __train_env_builder(self, ):
 
