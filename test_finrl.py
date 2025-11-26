@@ -187,7 +187,7 @@ class Main(object):
                  distribute: bool = True,
                  start_index: int = 0, # inclusive
                  end_index: int = 4, # inclusive
-                 seed: int = 42
+                 seed: int = 9
                  ):
         self.distribute = distribute
         self.start_index = start_index
