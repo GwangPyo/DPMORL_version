@@ -256,6 +256,7 @@ class Main(object):
             policy_range = range(self.num_total_policies)
         print("NUM TOTAL POLICY", self.num_total_policies)
         for policy_idx in policy_range:
+            print("Train Policy index", policy_idx)
             utility_function = self.utility_loader.get_utility(policy_idx)
             print('normalization data: None')
             utility_function.min_val = np.array([-100., -220., -575.])
